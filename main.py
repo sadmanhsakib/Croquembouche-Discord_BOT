@@ -64,7 +64,7 @@ async def on_message(message):
     for k in message_dict.keys():
         help += f"{k}\n"
     # stores all the complex_commands name in help
-    help += "-delete\n-quran\n-quote\n-sunnah"
+    help += "-del\n-quran\n-quote\n-sunnah"
     # adding the help section to the dict
     message_dict.update({"-help": f"{help}"})
 
