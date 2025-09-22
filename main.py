@@ -2,9 +2,12 @@ import discord
 import datetime
 import random
 import os
-from dotenv import load_dotenv
+import dotenv
+import json
 
-load_dotenv("const.env")
+dotenv.load_dotenv(".env")
+# config stores all the values inside the .env file
+config = dotenv.dotenv_values(".env")
 
 # giving the permissions
 intents = discord.Intents.default()
@@ -17,20 +20,25 @@ client = discord.Client(intents=intents)
 
 # Getting the CONST from the .env files
 USER_ID = int(os.getenv("USER_ID"))
-PERSONAL_SERVER_ID = int(os.getenv("PERSONAL_SERVER_ID"))
 GENERAL_CHANNEL_ID = int(os.getenv("GENERAL_CHANNEL_ID"))
 STARTING_TIME_CHANNEL_ID = int(os.getenv("STARTING_TIME_CHANNEL_ID"))
-DARK_HUMOR_ID = int(os.getenv("DARK_HUMOR_ID"))
+COUNTDOWN_CHANNEL_ID = int(os.getenv("COUNTDOWN_CHANNEL_ID"))
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+TIME_FORMAT = "%Y-%m-%d -> %H:%M:%S"
 QURAN_FILE = "quran.txt"
 SUNNAH_FILE = "sunnah.txt"
 QUOTES_FILE = "quote.txt"
 QUOTE_LIST = [QURAN_FILE, SUNNAH_FILE, QUOTES_FILE]
 
+# getting the countdown dictionary from the .env file
+COUNTDOWN_DATES = config.get("COUNTDOWN_DATES")
+countdown = json.loads(COUNTDOWN_DATES)
+
+
 @client.event
 # when the bot starts 
 async def on_ready():
-    # prints a message in console to 
+    # prints a message in console when ready
     print(f"Logged in as: {client.user}")
 
 
@@ -41,21 +49,17 @@ async def on_message(message):
     if message.author == client.user:
         return
     
-    # command for personal server
-    if message.content.startswith("-bonjour") and message.guild.id == PERSONAL_SERVER_ID:
-        await message.channel.send("Guten Tag, Chef. Ich hoffe, Sie haben einen fantastischen Tag. Ich wünsche Ihnen einen schönen Tag.")
-
     # stores every simple reply simple_commands
     message_dict = {
-        "-hello": f"Good day, {message.author.mention}. Hope you are having a wonderful day. Have a nice day. ",
+        "-bonjour": f"Guten Tag, Chef. Ich hoffe, Sie haben einen fantastischen Tag. Ich wünsche Ihnen einen schönen Tag.",
         "-status": "Active."
     }
 
     help = "Command list:\n"
-    # stores all the simple_commands name to help
+    # stores all the simple_commands name in help
     for k in message_dict.keys():
         help += f"{k}\n"
-    # stores all the complex_commands name to help
+    # stores all the complex_commands name in help
     help += "-delete\n-quran\n-quote\n-sunnah"
     # adding the help section to the dict
     message_dict.update({"-help": f"{help}"})
@@ -66,11 +70,15 @@ async def on_message(message):
             await message.channel.send(message_dict[msg])
 
     # deletes the necessary lines as per user request
-    if message.content.startswith("-delete"):
-        amount = message.content.replace("-delete ", "")
-        amount = int(amount)
-        # +1 to remove the command itself
-        await message.channel.purge(limit=amount+1)
+    if message.content.startswith("-del"):
+        try:
+            amount = message.content.replace("-del ", "")
+            amount = int(amount)
+
+            # +1 to remove the command itself
+            await message.channel.purge(limit=amount+1)
+        except Exception as error:
+            await message.channel.send("Invalid Argument!\nCorrent syntax: -del<space>[Number of Messages to Remove].")
 
     if message.content.startswith("-"):
         # replying with quotes
@@ -80,7 +88,7 @@ async def on_message(message):
             y = "-" + y
 
             if message.content == y:
-                # since Bangla alpha is in unicode, we need to open the file in unicode
+                # since Bengali alphabet is in unicode, we need to open the file in unicode
                 with open(x, "r", encoding="utf-8") as file:
                     lines = file.readlines()
                     
@@ -92,23 +100,39 @@ async def on_message(message):
 # called when a member of the server changes their activity
 # before and after represents the member that has changed presence;
 async def on_presence_update(before, after):
+    now = datetime.datetime.now().strftime(TIME_FORMAT)
     counter = 0
 
     # getting the channel id
     general_channel = client.get_channel(GENERAL_CHANNEL_ID)
     log_channel = client.get_channel(STARTING_TIME_CHANNEL_ID)
-    dark_humor_channel = client.get_channel(DARK_HUMOR_ID)
+    countdown_channel = client.get_channel(COUNTDOWN_CHANNEL_ID)
     
-    # for my personal server
-    if after.id == USER_ID and after.guild.id == PERSONAL_SERVER_ID:
+    # checking if it's the user or other members
+    if after.id == USER_ID:
         old_status = str(before.status)
         new_status = str(after.status)
-        now = datetime.datetime.now().strftime("%Y-%m-%d -> %H:%M:%S")
 
         # if the user comes online
         if old_status == "offline" and new_status != "offline":
             # sends a greeting message
             await general_channel.send(f"Willkommen zurück, {after.name}.\nIch wünsche Ihnen einen schönen Tag.")
+            
+            last_msg_date = ""
+            today = now.split(' ')[0]
+            # getting the last time when a message was send in countdown channel
+            async for message in countdown_channel.history(limit=1): 
+                # getting the date from the message creation time
+                last_msg_date = str(message.created_at).split(' ')[0]
+
+            # if the last message sent time is not today, then send it
+            if last_msg_date != today:
+                counter = 0
+                # reminds the user about the countdown's
+                for key in countdown.keys():
+                    counter += 1
+                    time_left = time_difference(now, countdown[key])
+                    await countdown_channel.send(f"Countdown-{counter} -> {key}: {time_left}")
 
             # getting the session id from the channel message history
             async for message in log_channel.history(limit=4):
@@ -134,39 +158,29 @@ async def on_presence_update(before, after):
                 msg = message
                 break
             
-            active_time = ActiveTime(msg, now)
+            # getting the duration
+            msg_parts = msg.content.split(' ')
+            msg_time = msg_parts[-1]
+            msg_date = msg_parts[-3]
+            time = f"{msg_date} -> {msg_time}"
+            active_time = time_difference(time, now)
+
             await log_channel.send(f"Closing Time: {now}")
             await log_channel.send(f"Was Active for: {active_time}")
-    # for other servers
-    else:
-        if old_status == "offline" and new_status != "offline":
-            await dark_humor_channel.send(f"Welcome back, {after.name}.")
-        elif old_status != "offline" and new_status == "offline":
-            await dark_humor_channel.send(f"Bye, {after.name}.\nSee you soon! ")
 
 
-def ActiveTime(msg, now):
-    # getting only time from the total value
-    msg = msg.content.replace(f"{msg.content[0:28]}", "")
-    now = now.replace(f"{now[0:14]}", "")
+def time_difference(starting, now):
+    # converting the time in datetime
+    time1 = datetime.datetime.strptime(starting, TIME_FORMAT)
+    time2 = datetime.datetime.strptime(now, TIME_FORMAT)
+    duration = time2 - time1
 
-    # creating a list of time by removing the ':'  
-    starting_parts = msg.split(":")
-    now_parts = now.split(":")
-
-    # converting string lists to int lists
-    starting_parts = list(map(int, starting_parts))
-    now_parts = list(map(int, now_parts))
-
-    duration = [0, 0, 0]
-
-    for i in range(3):
-        duration[i] = now_parts[i] - starting_parts[i]
-
-    # parsing the duration in a string
-    active_time = str(duration[0]) + " hours " + str(duration[1]) + " minutes " + str(duration[2]) + " seconds"
+    # making the time difference more readable
+    duration = str(duration).split(':')
+    active_time = f"{duration[0]} hours {duration[1]} minutes {duration[2]} seconds"
 
     return active_time
+
 
 # starts the bot
 client.run(BOT_TOKEN)
