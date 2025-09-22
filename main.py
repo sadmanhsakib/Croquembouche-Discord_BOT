@@ -5,6 +5,10 @@ import os
 import dotenv
 import json
 
+# keeps the bot alive
+from keep_alive import keep_alive
+keep_alive()
+
 dotenv.load_dotenv(".env")
 # config stores all the values inside the .env file
 config = dotenv.dotenv_values(".env")
