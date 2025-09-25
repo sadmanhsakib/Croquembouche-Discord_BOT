@@ -122,6 +122,21 @@ async def on_presence_update(before, after):
             # sends a greeting message
             await general_channel.send(f"Willkommen zurück, {after.name}.\nIch wünsche Ihnen einen schönen Tag.")
             
+            try:
+                # getting the session id from the channel message history
+                async for message in log_channel.history(limit=4):
+                    session_id = message.content
+                session_id = session_id.replace("Session #", "")
+                counter = int(session_id)
+                counter += 1
+            # if there are no previous messages, then set counter as 1
+            except UnboundLocalError:
+                counter = 1
+            
+            # acquires the channel id, then sends the message
+            await log_channel.send(f"Session #{counter}")
+            await log_channel.send(f"Opening Time: {now}")
+
             last_msg_date = ""
             today = now.split(' ')[0]
             # getting the last time when a message was send in countdown channel
@@ -129,30 +144,14 @@ async def on_presence_update(before, after):
                 # getting the date from the message creation time
                 last_msg_date = str(message.created_at).split(' ')[0]
 
-            # if the last message sent time is not today, then send it
+            # if the last countdown reminder wasn't sent on a date
             if last_msg_date != today:
-                counter = 0
+                countdown_counter = 0
                 # reminds the user about the countdown's
                 for key in countdown.keys():
                     counter += 1
                     time_left = time_difference(now, countdown[key])
-                    await countdown_channel.send(f"Countdown-{counter} -> {key}: {time_left}")
-
-            # getting the session id from the channel message history
-            async for message in log_channel.history(limit=4):
-                session_id = message.content
-
-            try:
-                session_id = session_id.replace("Session #", "")
-                counter = int(session_id)
-                counter += 1
-            # if there are no previous messages, then set counter as 1
-            except UnboundLocalError:
-                counter = 1
-
-            # acquires the channel id, then sends the message
-            await log_channel.send(f"Session #{counter}")
-            await log_channel.send(f"Opening Time: {now}")
+                    await countdown_channel.send(f"Countdown-{countdown_counter} -> {key}: {time_left}")
 
         # if the user goes offline
         elif old_status != "offline" and new_status == "offline":     
