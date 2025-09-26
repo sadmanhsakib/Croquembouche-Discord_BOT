@@ -104,7 +104,11 @@ async def on_message(message):
 # called when a member of the server changes their activity
 # before and after represents the member that has changed presence;
 async def on_presence_update(before, after):
-    now = datetime.datetime.now().strftime(TIME_FORMAT)
+    # defining the timezone
+    offset = datetime.timedelta(hours=6)
+
+    # getting the current time for the desired timezone
+    now = datetime.datetime.now(datetime.timezone(offset, name="GMT +6")).strftime(TIME_FORMAT)
     counter = 0
 
     # getting the channel id
