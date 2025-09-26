@@ -149,7 +149,7 @@ async def on_presence_update(before, after):
                 countdown_counter = 0
                 # reminds the user about the countdown's
                 for key in countdown.keys():
-                    counter += 1
+                    countdown_counter += 1
                     time_left = time_difference(now, countdown[key])
                     await countdown_channel.send(f"Countdown-{countdown_counter} -> {key}: {time_left}")
 
