@@ -60,29 +60,32 @@ async def on_message(message):
     }
 
     help = "Command list:\n"
+
     # stores all the simple_commands name in help
-    for k in message_dict.keys():
+    for k in message_dict:
         help += f"{k}\n"
+
     # stores all the complex_commands name in help
     help += "-del\n-quran\n-quote\n-sunnah"
+
     # adding the help section to the dict
-    message_dict.update({"-help": f"{help}"})
+    message_dict.update({"-help": help})
 
     # replies to user messages
     for msg in message_dict:
         if message.content.startswith(msg):
             await message.channel.send(message_dict[msg])
 
-    # deletes the necessary lines as per user request
+    # deletes previous messages as per user request
     if message.content.startswith("-del"):
         try:
-            amount = message.content.replace("-del ", "")
-            amount = int(amount)
+            parts = message.content.split(' ')
+            amount = int(parts[1])
 
             # +1 to remove the command itself
             await message.channel.purge(limit=amount+1)
-        except Exception as error:
-            await message.channel.send("Invalid Argument!\nCorrent syntax: -del<space>[Number of Messages to Remove].")
+        except:
+            await message.channel.send("Invalid command. Correct Syntax: -del<space>[Number of Messages to Remove]. ")
 
     if message.content.startswith("-"):
         # replying with quotes
