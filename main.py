@@ -4,7 +4,6 @@ import random
 import os
 import dotenv
 import json
-import sys
 
 # keeps the bot alive
 from keep_alive import keep_alive
@@ -201,6 +200,22 @@ async def on_presence_update(before, after):
             # sends a greeting message
             await general_channel.send(f"Willkommen zurück, {after.name}.\nIch wünsche Ihnen einen schönen Tag.")
             
+            last_msg_date = ""
+            today = now.split(' ')[0]
+            # getting the last time when a message was send in countdown channel
+            async for message in countdown_channel.history(limit=1): 
+                # getting the date from the message creation time
+                last_msg_date = str(message.created_at).split(' ')[0]
+
+            # if the last countdown reminder wasn't sent on a date
+            if last_msg_date != today:
+                countdown_counter = 0
+                # reminds the user about the countdown's
+                for key in countdown_dict.keys():
+                    countdown_counter += 1
+                    time_left = time_difference(today, countdown_dict[key])
+                    await countdown_channel.send(f"Countdown-{countdown_counter} -> {key}: {time_left}")
+
             try:
                 # getting the session id from the channel message history
                 async for message in log_channel.history(limit=4):
@@ -215,22 +230,6 @@ async def on_presence_update(before, after):
             # acquires the channel id, then sends the message
             await log_channel.send(f"Session #{counter}")
             await log_channel.send(f"Opening Time: {now}")
-
-            last_msg_date = ""
-            today = now.split(' ')[0]
-            # getting the last time when a message was send in countdown channel
-            async for message in countdown_channel.history(limit=1): 
-                # getting the date from the message creation time
-                last_msg_date = str(message.created_at).split(' ')[0]
-
-            # if the last countdown reminder wasn't sent on a date
-            if last_msg_date != today:
-                countdown_counter = 0
-                # reminds the user about the countdown's
-                for key in countdown_dict.keys():
-                    countdown_counter += 1
-                    time_left = time_difference(now, countdown_dict[key])
-                    await countdown_channel.send(f"Countdown-{countdown_counter} -> {key}: {time_left}")
 
         # if the user goes offline
         elif old_status != "offline" and new_status == "offline":     
@@ -252,7 +251,7 @@ async def on_presence_update(before, after):
 
 
 def time_difference(starting, now):
-    # if  starting contains time too
+    # if starting contains time too
     if len(starting.split(' ')) == 3:
         # converting the time in datetime
         time1 = datetime.datetime.strptime(starting, TIME_FORMAT)
