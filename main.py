@@ -195,6 +195,21 @@ async def on_presence_update(before, after):
 
         # if the user comes online
         if old_status == "offline" and new_status != "offline":
+            try:
+                # getting the session id from the channel message history
+                async for message in log_channel.history(limit=4):
+                    session_id = message.content.replace("Session #", "")
+                    
+                counter = int(session_id)
+                counter += 1
+            # if there are no previous messages, then set counter as 1
+            except UnboundLocalError:
+                counter = 1
+            
+            # acquires the channel id, then sends the message
+            await log_channel.send(f"Session #{counter}")
+            await log_channel.send(f"Opening Time: {now}")
+            
             
             last_msg_date = ""
             today = now.split(' ')[0]
@@ -206,26 +221,12 @@ async def on_presence_update(before, after):
             # if the last countdown reminder wasn't sent on a date
             if last_msg_date != today:
                 countdown_counter = 0
-                # reminds the user about the countdown's
+                
+                # sends a message for each countdowns
                 for key in countdown_dict.keys():
                     countdown_counter += 1
                     time_left = time_difference(today, countdown_dict[key])
                     await countdown_channel.send(f"Countdown-{countdown_counter} -> {key}: {time_left}")
-
-            try:
-                # getting the session id from the channel message history
-                async for message in log_channel.history(limit=4):
-                    session_id = message.content
-                session_id = session_id.replace("Session #", "")
-                counter = int(session_id)
-                counter += 1
-            # if there are no previous messages, then set counter as 1
-            except UnboundLocalError:
-                counter = 1
-            
-            # acquires the channel id, then sends the message
-            await log_channel.send(f"Session #{counter}")
-            await log_channel.send(f"Opening Time: {now}")
 
         # if the user goes offline
         elif old_status != "offline" and new_status == "offline":     
