@@ -22,7 +22,6 @@ client = discord.Client(intents=intents)
 
 # Getting the data from the .env files
 USER_ID = int(os.getenv("USER_ID"))
-GENERAL_CHANNEL_ID = int(os.getenv("GENERAL_CHANNEL_ID"))
 STARTING_TIME_CHANNEL_ID = int(os.getenv("STARTING_TIME_CHANNEL_ID"))
 COUNTDOWN_CHANNEL_ID = int(os.getenv("COUNTDOWN_CHANNEL_ID"))
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -186,7 +185,6 @@ async def on_presence_update(before, after):
     counter = 0
 
     # getting the channel id
-    general_channel = client.get_channel(GENERAL_CHANNEL_ID)
     log_channel = client.get_channel(STARTING_TIME_CHANNEL_ID)
     countdown_channel = client.get_channel(COUNTDOWN_CHANNEL_ID)
     
@@ -197,8 +195,6 @@ async def on_presence_update(before, after):
 
         # if the user comes online
         if old_status == "offline" and new_status != "offline":
-            # sends a greeting message
-            await general_channel.send(f"Willkommen zurück, {after.name}.\nIch wünsche Ihnen einen schönen Tag.")
             
             last_msg_date = ""
             today = now.split(' ')[0]
