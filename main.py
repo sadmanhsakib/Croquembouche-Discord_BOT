@@ -49,7 +49,7 @@ async def on_message(message):
     # prevents the bot from replying on its own messages
     if message.author == client.user:
         return
-    
+
     # stores every simple reply simple_commands
     message_dict = {
         f"{initial}bonjour": f"Guten Tag, Chef. Ich hoffe, Sie haben einen fantastischen Tag. Ich wünsche Ihnen einen schönen Tag.",
@@ -180,7 +180,7 @@ async def on_presence_update(before, after):
     # defining the timezone
     offset = datetime.timedelta(hours=6)
 
-    # getting the current time for the desired timezone
+    # getting the current time
     now = datetime.datetime.now(datetime.timezone(offset, name="GMT +6")).strftime(TIME_FORMAT)
     counter = 0
 
@@ -213,10 +213,11 @@ async def on_presence_update(before, after):
             
             last_msg_date = ""
             today = now.split(' ')[0]
+            
             # getting the last time when a message was send in countdown channel
             async for message in countdown_channel.history(limit=1): 
                 # getting the date from the message creation time
-                last_msg_date = str(message.created_at).split(' ')[0]
+                last_msg_date = str(message.created_at + datetime.timedelta(hours=6)).split(' ')[0]
 
             # if the last countdown reminder wasn't sent on a date
             if last_msg_date != today:
