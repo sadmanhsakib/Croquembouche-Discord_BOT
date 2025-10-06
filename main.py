@@ -22,8 +22,8 @@ client = discord.Client(intents=intents)
 
 # Getting the data from the .env files
 USER_ID = int(os.getenv("USER_ID"))
-STARTING_TIME_CHANNEL_ID = int(os.getenv("STARTING_TIME_CHANNEL_ID"))
-COUNTDOWN_CHANNEL_ID = int(os.getenv("COUNTDOWN_CHANNEL_ID"))
+starting_time_channel_id = int(os.getenv("STARTING_TIME_CHANNEL_ID"))
+countdown_channel_id = int(os.getenv("COUNTDOWN_CHANNEL_ID"))
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 initial = os.getenv("INITIAL")
 
@@ -151,17 +151,29 @@ async def on_message(message):
         try:
             # extracting the data from the message
             parts = message.content.split(' ')
-            variable = parts[1]
+            variable = parts[1].upper()
             value = parts[2]
 
+            shouldUpdate = False
+            
             match variable:
                 case "INITIAL":
                     initial = value
-        
-                    # updating the .env file
-                    dotenv.set_key(".env", variable, value)
+                    shouldUpdate = True
+                case "STARTING_TIME_CHANNEL_ID":
+                    starting_time_channel_id = int(value)
+                    shouldUpdate = True
+                case "COUNTDOWN_CHANNEL_ID":
+                    countdown_channel_id = int(value)
+                    shouldUpdate = True
+
+            if shouldUpdate:
+                # updating the .env file
+                dotenv.set_key(".env", variable, value)
+                await message.channel.send(f"Successful. {variable} set to {value}")
+            else:
+                await message.channel.send(f"Variable not found. Available variables are: INITIAL, STARTING_TIME_CHANNEL_ID, COUNTDOWN_CHANNEL_ID")
             
-            await message.channel.send(f"Successful. {variable} set to {value}")
         except:
             await message.channel.send(f"Invalid. Correct Syntax: `{initial}set VARIABLE VALUE`")
 
@@ -185,8 +197,8 @@ async def on_presence_update(before, after):
     counter = 0
 
     # getting the channel id
-    log_channel = client.get_channel(STARTING_TIME_CHANNEL_ID)
-    countdown_channel = client.get_channel(COUNTDOWN_CHANNEL_ID)
+    log_channel = client.get_channel(starting_time_channel_id)
+    countdown_channel = client.get_channel(countdown_channel_id)
     
     # checking if it's the user or other members
     if after.id == USER_ID:
