@@ -44,7 +44,10 @@ async def on_ready():
 @client.event
 # when the user sends a message in server
 async def on_message(message):
+    # making the variables global to avoid issues
     global initial
+    global starting_time_channel_id
+    global countdown_channel_id
     
     # prevents the bot from replying on its own messages
     if message.author == client.user:
