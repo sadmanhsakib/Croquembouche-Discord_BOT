@@ -25,7 +25,7 @@ USER_ID = int(os.getenv("USER_ID"))
 starting_time_channel_id = int(os.getenv("STARTING_TIME_CHANNEL_ID"))
 countdown_channel_id = int(os.getenv("COUNTDOWN_CHANNEL_ID"))
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-initial = os.getenv("INITIAL")
+prefix = os.getenv("PREFIX")
 
 TIME_FORMAT = "%Y-%m-%d -> %H:%M:%S"
 QUOTES = ["quran.txt", "sunnah.txt", "quote.txt"]
@@ -45,7 +45,7 @@ async def on_ready():
 # when the user sends a message in server
 async def on_message(message):
     # making the variables global to avoid issues
-    global initial
+    global prefix
     global starting_time_channel_id
     global countdown_channel_id
     
@@ -55,21 +55,21 @@ async def on_message(message):
 
     # stores every simple reply simple_commands
     message_dict = {
-        f"{initial}bonjour": f"Guten Tag, Chef. Ich hoffe, Sie haben einen fantastischen Tag. Ich wünsche Ihnen einen schönen Tag.",
-        f"{initial}status": "Active."
+        f"{prefix}bonjour": f"Guten Tag, Chef. Ich hoffe, Sie haben einen fantastischen Tag. Ich wünsche Ihnen einen schönen Tag.",
+        f"{prefix}status": "Active."
     }
 
     help = f"""```Command list:
-{initial}bonjour
-{initial}status
-{initial}del number_of_messages_to_delete
-{initial}add NAME TIME(%Y-%m-%d)
-{initial}rmv NAME
-{initial}set VARIABLE VALUE
-{initial}randomline quran/sunnah/quote```"""
+{prefix}bonjour
+{prefix}status
+{prefix}del number_of_messages_to_delete
+{prefix}add NAME TIME(%Y-%m-%d)
+{prefix}rmv NAME
+{prefix}set VARIABLE VALUE
+{prefix}randomline quran/sunnah/quote```"""
 
     # adding the help section to the dict
-    message_dict.update({f"{initial}help": help})
+    message_dict.update({f"{prefix}help": help})
 
     # replies to user messages
     for msg in message_dict:
@@ -77,7 +77,7 @@ async def on_message(message):
             await message.channel.send(message_dict[msg])
 
     # deletes previous messages as per user request
-    if message.content.startswith(f"{initial}del"):
+    if message.content.startswith(f"{prefix}del"):
         try:
             # extracting the data from the use input
             parts = message.content.split(' ')
@@ -86,10 +86,10 @@ async def on_message(message):
             # +1 to remove the command itself
             await message.channel.purge(limit=amount+1)
         except:
-            await message.channel.send(f"Invalid command. Correct Syntax: `{initial}del number_of_messages_to_delete` ")
+            await message.channel.send(f"Invalid command. Correct Syntax: `{prefix}del number_of_messages_to_delete` ")
 
     # adds an item to the dictionary
-    elif message.content.startswith(f"{initial}add"):
+    elif message.content.startswith(f"{prefix}add"):
         try:
             # extracting the data from the messages
             parts = message.content.split(' ')
@@ -107,10 +107,10 @@ async def on_message(message):
 
             await message.channel.send(f"Successfully added countdown. {name}: {time}")
         except:
-            await message.channel.send(f"Invalid. Correct Syntax: `{initial}add NAME TIME(%Y-%m-%d)`")
+            await message.channel.send(f"Invalid. Correct Syntax: `{prefix}add NAME TIME(%Y-%m-%d)`")
     
     # removes an item from the dictionary
-    elif message.content.startswith(f"{initial}rmv"):
+    elif message.content.startswith(f"{prefix}rmv"):
         try:
             # extracting the data from the messages
             parts = message.content.split(' ')
@@ -127,10 +127,10 @@ async def on_message(message):
 
             await message.channel.send(f"Successfully removed {name} countdown from storage.")
         except:
-            await message.channel.send(f"Invalid. Correct Syntax: `{initial}rmv NAME`")
+            await message.channel.send(f"Invalid. Correct Syntax: `{prefix}rmv NAME`")
 
     # send a randomline as per user request
-    elif message.content.startswith(f"{initial}randomline"):
+    elif message.content.startswith(f"{prefix}randomline"):
         try:
             # extracting the data from user message
             parts = message.content.split(' ')
@@ -147,10 +147,10 @@ async def on_message(message):
             else:
                 await message.channel.send(f"{item_name} not found. Available files are: {QUOTES}")
         except:
-            await message.channel.send(f"Invalid. Correct Syntax: `{initial}randomline quran/sunnah/quote`")
+            await message.channel.send(f"Invalid. Correct Syntax: `{prefix}randomline quran/sunnah/quote`")
     
     # changes bot settings
-    elif message.content.startswith(f"{initial}set"):
+    elif message.content.startswith(f"{prefix}set"):
         try:
             # extracting the data from the message
             parts = message.content.split(' ')
@@ -160,8 +160,8 @@ async def on_message(message):
             shouldUpdate = False
             
             match variable:
-                case "INITIAL":
-                    initial = value
+                case "PREFIX":
+                    prefix = value
                     shouldUpdate = True
                 case "STARTING_TIME_CHANNEL_ID":
                     starting_time_channel_id = int(value)
@@ -175,17 +175,16 @@ async def on_message(message):
                 dotenv.set_key(".env", variable, value)
                 await message.channel.send(f"Successful. {variable} set to {value}")
             else:
-                await message.channel.send(f"Variable not found. Available variables are: INITIAL, STARTING_TIME_CHANNEL_ID, COUNTDOWN_CHANNEL_ID")
-            
+                await message.channel.send(f"Variable not found. Available variables are: PREFIX, STARTING_TIME_CHANNEL_ID, COUNTDOWN_CHANNEL_ID")
         except:
-            await message.channel.send(f"Invalid. Correct Syntax: `{initial}set VARIABLE VALUE`")
+            await message.channel.send(f"Invalid. Correct Syntax: `{prefix}set VARIABLE VALUE`")
 
     # replies with the list of available items as per user request
-    elif message.content.startswith(f"{initial}list"):
+    elif message.content.startswith(f"{prefix}list"):
         try:
             await message.channel.send(f"```Available Countdowns: \n{list(countdown_dict.keys())}```")
         except:
-            await message.channel.send(f"Invalid. Correct Syntax: `{initial}list countdown`")
+            await message.channel.send(f"Invalid. Correct Syntax: `{prefix}list countdown`")
             
 
 @client.event
@@ -284,6 +283,7 @@ def time_difference(starting, now):
         active_time = str(duration.days) + " days"
 
     return active_time
+
 
 # starts the bot
 client.run(BOT_TOKEN)
