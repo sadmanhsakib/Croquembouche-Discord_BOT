@@ -3,12 +3,9 @@ import discord, dotenv
 import config
 from discord.ext import commands
 
-countdown_dict = config.countdown_dict
-
 class BotCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.prefix = config.prefix
 
     @commands.command(name="bonjour")
     async def hello(self, ctx):
@@ -24,7 +21,7 @@ class BotCommands(commands.Cog):
 
     @commands.command(name="list")
     async def list_countdown(self, ctx):
-        await ctx.send(f"List of countdowns: {list(countdown_dict.keys())}")
+        await ctx.send(f"List of countdowns: {list(config.countdown_dict.keys())}")
 
     @commands.command(name="help")
     async def help_command(self, ctx):
@@ -37,20 +34,20 @@ class BotCommands(commands.Cog):
         # adding the general commands
         embed.add_field(
             name="\n📝 General Commands: ",
-            value=f"`{self.prefix}bonjour` - Greets the user.\n"
-            f"`{self.prefix}status` - Returns the status of the bot.\n"
-            f"`{self.prefix}ping` - Returns the latency of the BOT in milliseconds.\n"
-            f"`{self.prefix}list` - Returns the list of countdown names.\n",
+            value=f"`{config.prefix}bonjour` - Greets the user.\n"
+            f"`{config.prefix}status` - Returns the status of the bot.\n"
+            f"`{config.prefix}ping` - Returns the latency of the BOT in milliseconds.\n"
+            f"`{config.prefix}list` - Returns the list of countdown names.\n",
             inline=False,
         )
 
         # adding the complex commands
         embed.add_field(
             name="\n🧩 Complex Commands (Takes Arguments): ",
-            value=f"`{self.prefix}del number_of_messages_to_delete` - Deletes the number of messages given.\n"
-            f"`{self.prefix}add countdown NAME DATE(%Y-%m-%d)` - Adds a countdown for daily pinging.\n"
-            f"`{self.prefix}rmv countdown NAME` - Removes a countdown.\n"
-            f"`{self.prefix}set VARIABLE VALUE` - Sets the value of the BOT config variable to the given value.\n",
+            value=f"`{config.prefix}del number_of_messages_to_delete` - Deletes the number of messages given.\n"
+            f"`{config.prefix}add countdown NAME DATE(%Y-%m-%d)` - Adds a countdown for daily pinging.\n"
+            f"`{config.prefix}rmv countdown NAME` - Removes a countdown.\n"
+            f"`{config.prefix}set VARIABLE VALUE` - Sets the value of the BOT config variable to the given value.\n",
             inline=False
         )
 
@@ -67,7 +64,7 @@ class BotCommands(commands.Cog):
             # +1 to remove the command itself
             await ctx.channel.purge(limit=amount+1)
         except:
-            await ctx.send(f"Invalid command. Correct Syntax: `{self.prefix}del number_of_messages_to_delete` ")
+            await ctx.send(f"Invalid command. Correct Syntax: `{config.prefix}del number_of_messages_to_delete` ")
 
     @commands.command(name="add")
     async def add(self, ctx, *, message: str=''):
@@ -81,17 +78,17 @@ class BotCommands(commands.Cog):
             date = parts[2]
 
             # adding the countdown to the dictionary
-            countdown_dict.update({name: date})
+            config.countdown_dict.update({name: date})
 
             # dumping the whole dictionary in string format
-            updated = json.dumps(countdown_dict)
+            updated = json.dumps(config.countdown_dict)
 
             # saving the dictionary to the .env file
             dotenv.set_key(".env", "COUNTDOWN_DATES", updated)
 
             await ctx.send(f"Successfully added countdown. {name}: {date}")
         except:
-            await ctx.send(f"Invalid. Correct Syntax: `{self.prefix}add countdown NAME DATE(%Y-%m-%d)`")
+            await ctx.send(f"Invalid. Correct Syntax: `{config.prefix}add countdown NAME DATE(%Y-%m-%d)`")
 
     @commands.command(name="rmv")
     async def remove(self, ctx, *, message: str=''):
@@ -104,17 +101,17 @@ class BotCommands(commands.Cog):
             name = parts[1]
 
             # removing the countdown from the dictionary
-            countdown_dict.pop(name)
+            config.countdown_dict.pop(name)
 
             # dumping the whole dictionary in string format
-            updated = json.dumps(countdown_dict)
+            updated = json.dumps(config.countdown_dict)
 
             # saving the dictionary to the .env file
             dotenv.set_key(".env", "COUNTDOWN_DATES", updated)
 
             await ctx.send(f"Successfully removed {name} countdown from storage.")
         except:
-            await ctx.send(f"Invalid. Correct Syntax: `{self.prefix}rmv countdown NAME`")
+            await ctx.send(f"Invalid. Correct Syntax: `{config.prefix}rmv countdown NAME`")
 
     @commands.command(name="set")
     async def set(self, ctx, *, message: str=''):
@@ -137,7 +134,7 @@ class BotCommands(commands.Cog):
                     config.starting_time_channel_id = int(value)
                     shouldUpdate = True
                 case "COUNTDOWN_CHANNEL_ID":
-                    config.starting_time_channel_id = int(value)
+                    config.countdown_channel_id = int(value)
                     shouldUpdate = True
 
             if shouldUpdate:
@@ -150,7 +147,7 @@ class BotCommands(commands.Cog):
                 )
         except:
             await ctx.send(
-                f"Invalid. Correct Syntax: `{self.prefix}set VARIABLE VALUE`"
+                f"Invalid. Correct Syntax: `{config.prefix}set VARIABLE VALUE`"
             )
 
 async def setup(bot):
