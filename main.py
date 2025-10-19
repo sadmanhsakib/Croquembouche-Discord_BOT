@@ -1,15 +1,11 @@
-import discord
 import datetime
-import random
-import os
-import dotenv
-import json
+import discord
+import config
+from discord.ext import commands
 
-# keeps the bot alive
+# for running the bot as a web
 from keep_alive import keep_alive
 keep_alive()
-
-dotenv.load_dotenv(".env")
 
 # giving the permissions
 intents = discord.Intents.default()
@@ -18,179 +14,42 @@ intents.messages = True
 intents.presences = True
 intents.members = True
 
-client = discord.Client(intents=intents)
-
-# Getting the data from the .env files
-USER_ID = int(os.getenv("USER_ID"))
-starting_time_channel_id = int(os.getenv("STARTING_TIME_CHANNEL_ID"))
-countdown_channel_id = int(os.getenv("COUNTDOWN_CHANNEL_ID"))
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-prefix = os.getenv("PREFIX")
-
+# Getting the data from the config.py
+USER_ID = config.USER_ID
+BOT_TOKEN = config.BOT_TOKEN
+countdown_dict = config.countdown_dict
 TIME_FORMAT = "%Y-%m-%d -> %H:%M:%S"
-QUOTES = ["quran.txt", "sunnah.txt", "quote.txt"]
 
-# getting the countdown dictionary from the .env file
-countdown_dict = json.loads(os.getenv("COUNTDOWN_DATES"))
+def get_prefix(bot, message):
+    return config.prefix
 
+bot = commands.Bot(command_prefix=get_prefix, intents=intents, help_command=None)
 
-@client.event
-# when the bot starts 
+@bot.event
+# when the bot starts
 async def on_ready():
+    #loading the command script
+    await bot.load_extension("bot_commands")
+
     # prints a message in console when ready
-    print(f"Logged in as: {client.user}")
+    print(f"✅Logged in as: {bot.user}")
 
 
-@client.event
-# when the user sends a message in server
+@bot.event
 async def on_message(message):
-    # making the variables global to avoid issues
-    global prefix
-    global starting_time_channel_id
-    global countdown_channel_id
-    
     # prevents the bot from replying on its own messages
-    if message.author == client.user:
+    if message.author == bot.user:
         return
 
-    # stores every simple reply simple_commands
-    message_dict = {
-        f"{prefix}bonjour": f"Guten Tag, Chef. Ich hoffe, Sie haben einen fantastischen Tag. Ich wünsche Ihnen einen schönen Tag.",
-        f"{prefix}status": "Active."
-    }
+    # processing the commands
+    await bot.process_commands(message)
 
-    help = f"""```Command list:
-{prefix}bonjour
-{prefix}status
-{prefix}del number_of_messages_to_delete
-{prefix}add NAME TIME(%Y-%m-%d)
-{prefix}rmv NAME
-{prefix}set VARIABLE VALUE
-{prefix}randomline quran/sunnah/quote```"""
 
-    # adding the help section to the dict
-    message_dict.update({f"{prefix}help": help})
-
-    # replies to user messages
-    for msg in message_dict:
-        if message.content.startswith(msg):
-            await message.channel.send(message_dict[msg])
-
-    # deletes previous messages as per user request
-    if message.content.startswith(f"{prefix}del"):
-        try:
-            # extracting the data from the use input
-            parts = message.content.split(' ')
-            amount = int(parts[1])
-
-            # +1 to remove the command itself
-            await message.channel.purge(limit=amount+1)
-        except:
-            await message.channel.send(f"Invalid command. Correct Syntax: `{prefix}del number_of_messages_to_delete` ")
-
-    # adds an item to the dictionary
-    elif message.content.startswith(f"{prefix}add"):
-        try:
-            # extracting the data from the messages
-            parts = message.content.split(' ')
-            name = parts[1]
-            time = parts[2]
-
-            # adding the countdown to the dictionary
-            countdown_dict.update({name: time})
-            
-            # dumping the whole dictionary in string format
-            updated = json.dumps(countdown_dict)
-            
-            # saving the dictionary to the .env file
-            dotenv.set_key(".env", "COUNTDOWN_DATES", updated)
-
-            await message.channel.send(f"Successfully added countdown. {name}: {time}")
-        except:
-            await message.channel.send(f"Invalid. Correct Syntax: `{prefix}add NAME TIME(%Y-%m-%d)`")
-    
-    # removes an item from the dictionary
-    elif message.content.startswith(f"{prefix}rmv"):
-        try:
-            # extracting the data from the messages
-            parts = message.content.split(' ')
-            name = parts[1]
-
-            # removing the countdown from the dictionary
-            countdown_dict.pop(name)
-            
-            # dumping the whole dictionary in string format
-            updated = json.dumps(countdown_dict)
-            
-            # saving the dictionary to the .env file
-            dotenv.set_key(".env", "COUNTDOWN_DATES", updated)
-
-            await message.channel.send(f"Successfully removed {name} countdown from storage.")
-        except:
-            await message.channel.send(f"Invalid. Correct Syntax: `{prefix}rmv NAME`")
-
-    # send a randomline as per user request
-    elif message.content.startswith(f"{prefix}randomline"):
-        try:
-            # extracting the data from user message
-            parts = message.content.split(' ')
-            item_name = parts[1]
-            file_name = item_name + ".txt"
-
-            if file_name in QUOTES:
-                # since Bengali alphabet is in unicode, we need to open the file in unicode
-                with open(file_name, 'r', encoding="utf-8") as file:
-                    lines = file.readlines()
-            
-                    # sending a random line from the user's desired type
-                    await message.channel.send(lines[random.randint(0, (len(lines)-1))])
-            else:
-                await message.channel.send(f"{item_name} not found. Available files are: {QUOTES}")
-        except:
-            await message.channel.send(f"Invalid. Correct Syntax: `{prefix}randomline quran/sunnah/quote`")
-    
-    # changes bot settings
-    elif message.content.startswith(f"{prefix}set"):
-        try:
-            # extracting the data from the message
-            parts = message.content.split(' ')
-            variable = parts[1].upper()
-            value = parts[2]
-
-            shouldUpdate = False
-            
-            match variable:
-                case "PREFIX":
-                    prefix = value
-                    shouldUpdate = True
-                case "STARTING_TIME_CHANNEL_ID":
-                    starting_time_channel_id = int(value)
-                    shouldUpdate = True
-                case "COUNTDOWN_CHANNEL_ID":
-                    countdown_channel_id = int(value)
-                    shouldUpdate = True
-
-            if shouldUpdate:
-                # updating the .env file
-                dotenv.set_key(".env", variable, value)
-                await message.channel.send(f"Successful. {variable} set to {value}")
-            else:
-                await message.channel.send(f"Variable not found. Available variables are: PREFIX, STARTING_TIME_CHANNEL_ID, COUNTDOWN_CHANNEL_ID")
-        except:
-            await message.channel.send(f"Invalid. Correct Syntax: `{prefix}set VARIABLE VALUE`")
-
-    # replies with the list of available items as per user request
-    elif message.content.startswith(f"{prefix}list"):
-        try:
-            await message.channel.send(f"```Available Countdowns: \n{list(countdown_dict.keys())}```")
-        except:
-            await message.channel.send(f"Invalid. Correct Syntax: `{prefix}list countdown`")
-            
-
-@client.event
-# called when a member of the server changes their activity
-# before and after represents the member that has changed presence;
+@bot.event
 async def on_presence_update(before, after):
+    starting_time_channel_id = config.starting_time_channel_id
+    countdown_channel_id = config.countdown_channel_id
+    
     # defining the timezone
     offset = datetime.timedelta(hours=6)
 
@@ -199,8 +58,8 @@ async def on_presence_update(before, after):
     counter = 0
 
     # getting the channel id
-    log_channel = client.get_channel(starting_time_channel_id)
-    countdown_channel = client.get_channel(countdown_channel_id)
+    log_channel = bot.get_channel(starting_time_channel_id)
+    countdown_channel = bot.get_channel(countdown_channel_id)
     
     # checking if it's the user or other members
     if after.id == USER_ID:
@@ -223,7 +82,6 @@ async def on_presence_update(before, after):
             # acquires the channel id, then sends the message
             await log_channel.send(f"Session #{counter}")
             await log_channel.send(f"Opening Time: {now}")
-            
             
             last_msg_date = ""
             today = now.split(' ')[0]
@@ -284,6 +142,5 @@ def time_difference(starting, now):
 
     return active_time
 
-
 # starts the bot
-client.run(BOT_TOKEN)
+bot.run(BOT_TOKEN)
