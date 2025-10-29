@@ -4,8 +4,7 @@ import dotenv
 dotenv.load_dotenv()
 
 USER_ID = int(os.getenv("USER_ID"))
-# BOT_TOKEN = os.getenv("BOT_TOKEN")
-BOT_TOKEN = "MTQyNTcxMTA2OTI2NzIzNDkxMg.GbwEnr.FQxL1sqzamHC0vXmejemusp1Oagx2UL7wdx0y4"
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 prefix = None
