@@ -2,6 +2,7 @@ import datetime
 import discord
 import config
 from discord.ext import commands
+from database import db
 
 # for running the bot as a web
 from keep_alive import keep_alive
@@ -14,7 +15,7 @@ intents.messages = True
 intents.presences = True
 intents.members = True
 
-TIME_FORMAT = "%Y-%m-%d -> %H:%M:%S"
+TIME_FORMAT = "%Y-%m-%d->%H:%M:%S"
 
 def get_prefix(bot, message):
     return config.prefix
@@ -26,10 +27,34 @@ bot = commands.Bot(command_prefix=get_prefix, intents=intents, help_command=None
 async def on_ready():
     #loading the command script
     await bot.load_extension("bot_commands")
+    
+    # connecting to the database
+    await db.connect()
+
+    try:
+        # loading the data from the database
+        await config.load_data()
+    except Exception:
+        # setting the default values
+        await config.set_default_values()
+        # loading the data from the database
+        await config.load_data()
 
     # prints a message in console when ready
     print(f"✅Logged in as: {bot.user}")
 
+
+@bot.event
+async def on_guild_join(guild):
+    # setting the default values
+    await config.set_default_values()
+    
+    # getting the general channel of the server that the BOT just joined
+    channel = discord.utils.get(guild.text_channels, name="testing_ground")
+
+    if channel and channel.permissions_for(guild.me).send_messages:
+        # sending greeting messages
+        await channel.send("Successfully set the default values!")
 
 @bot.event
 async def on_message(message):
@@ -43,19 +68,15 @@ async def on_message(message):
 
 @bot.event
 async def on_presence_update(before, after):
-    starting_time_channel_id = config.starting_time_channel_id
+    # defining the channels
     countdown_channel_id = config.countdown_channel_id
+    countdown_channel = bot.get_channel(countdown_channel_id)
 
     # defining the timezone
     offset = datetime.timedelta(hours=6)
 
     # getting the current time
     now = datetime.datetime.now(datetime.timezone(offset, name="GMT +6")).strftime(TIME_FORMAT)
-    counter = 0
-
-    # getting the channel id
-    log_channel = bot.get_channel(starting_time_channel_id)
-    countdown_channel = bot.get_channel(countdown_channel_id)
 
     # checking if it's the user or other members
     if after.id == config.USER_ID:
@@ -64,21 +85,6 @@ async def on_presence_update(before, after):
 
         # if the user comes online
         if old_status == "offline" and new_status != "offline":
-            try:
-                # getting the session id from the channel message history
-                async for message in log_channel.history(limit=4):
-                    session_id = message.content.replace("Session #", "")
-
-                counter = int(session_id)
-                counter += 1
-            # if there are no previous messages, then set counter as 1
-            except UnboundLocalError:
-                counter = 1
-
-            # acquires the channel id, then sends the message
-            await log_channel.send(f"Session #{counter}")
-            await log_channel.send(f"Opening Time: {now}")
-
             last_msg_date = ""
             today = now.split(' ')[0]
 
@@ -96,25 +102,6 @@ async def on_presence_update(before, after):
                     countdown_counter += 1
                     time_left = time_difference(today, config.countdown_dict[key])
                     await countdown_channel.send(f"Countdown-{countdown_counter} -> {key}: {time_left}")
-
-        # if the user goes offline
-        elif old_status != "offline" and new_status == "offline":     
-            msg = None
-            # getting the last message from desired channel; limit = number of channel
-            async for message in log_channel.history(limit=1):
-                msg = message
-
-            # extracting the data from the message
-            msg_parts = msg.content.split(' ')
-            msg_time = msg_parts[-1]
-            msg_date = msg_parts[-3]
-            time = f"{msg_date} -> {msg_time}"
-
-            active_time = time_difference(time, now)
-
-            await log_channel.send(f"Closing Time: {now}")
-            await log_channel.send(f"Was Active for: {active_time}")
-
 
 def time_difference(starting, now):
     # if starting contains time too

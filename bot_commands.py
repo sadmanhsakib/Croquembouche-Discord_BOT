@@ -1,6 +1,7 @@
 import json
-import discord, dotenv
+import discord
 import config
+from database import db
 from discord.ext import commands
 
 class BotCommands(commands.Cog):
@@ -50,7 +51,6 @@ class BotCommands(commands.Cog):
             f"`{config.prefix}set VARIABLE VALUE` - Sets the value of the BOT config variable to the given value.\n",
             inline=False
         )
-
         await ctx.send(embed=embed)
 
     @commands.command(name="del")
@@ -83,8 +83,8 @@ class BotCommands(commands.Cog):
             # dumping the whole dictionary in string format
             updated = json.dumps(config.countdown_dict)
 
-            # saving the dictionary to the .env file
-            dotenv.set_key(".env", "COUNTDOWN_DATES", updated)
+            # updating the database
+            await db.set_variable("COUNTDOWN_DATES", updated)
 
             await ctx.send(f"Successfully added countdown. {name}: {date}")
         except:
@@ -106,8 +106,8 @@ class BotCommands(commands.Cog):
             # dumping the whole dictionary in string format
             updated = json.dumps(config.countdown_dict)
 
-            # saving the dictionary to the .env file
-            dotenv.set_key(".env", "COUNTDOWN_DATES", updated)
+            # updating the database
+            await db.set_variable("COUNTDOWN_DATES", updated)
 
             await ctx.send(f"Successfully removed {name} countdown from storage.")
         except:
@@ -130,25 +130,26 @@ class BotCommands(commands.Cog):
                 case "PREFIX":
                     config.prefix = value
                     shouldUpdate = True
-                case "STARTING_TIME_CHANNEL_ID":
-                    config.starting_time_channel_id = int(value)
-                    shouldUpdate = True
                 case "COUNTDOWN_CHANNEL_ID":
                     config.countdown_channel_id = int(value)
                     shouldUpdate = True
+                case "LOG_CHANNEL_ID":
+                    config.log_channel_id = int(value)
+                    shouldUpdate = True    
 
             if shouldUpdate:
-                # updating the .env file
-                dotenv.set_key(".env", variable, value)
+                await db.set_variable(variable, value)
                 await ctx.send(f"Successful. {variable} set to {value}")
             else:
                 await ctx.send(
-                    f"Variable not found. Available variables are: PREFIX, STARTING_TIME_CHANNEL_ID, COUNTDOWN_CHANNEL_ID"
+                    f"Variable not found. Available variables are: PREFIX, COUNTDOWN_CHANNEL_ID, LOG_CHANNEL_ID"
                 )
         except:
             await ctx.send(
                 f"Invalid. Correct Syntax: `{config.prefix}set VARIABLE VALUE`"
             )
 
+    
 async def setup(bot):
     await bot.add_cog(BotCommands(bot))
+    print("✅Bot Commands loaded")
