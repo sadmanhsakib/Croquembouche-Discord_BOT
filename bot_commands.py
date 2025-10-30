@@ -133,16 +133,13 @@ class BotCommands(commands.Cog):
                 case "COUNTDOWN_CHANNEL_ID":
                     config.countdown_channel_id = int(value)
                     shouldUpdate = True
-                case "LOG_CHANNEL_ID":
-                    config.log_channel_id = int(value)
-                    shouldUpdate = True    
 
             if shouldUpdate:
                 await db.set_variable(variable, value)
                 await ctx.send(f"Successful. {variable} set to {value}")
             else:
                 await ctx.send(
-                    f"Variable not found. Available variables are: PREFIX, COUNTDOWN_CHANNEL_ID, LOG_CHANNEL_ID"
+                    f"Variable not found. Available variables are: PREFIX, COUNTDOWN_CHANNEL_ID"
                 )
         except:
             await ctx.send(

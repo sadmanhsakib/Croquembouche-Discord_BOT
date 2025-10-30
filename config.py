@@ -10,7 +10,6 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 prefix = None
 countdown_channel_id = None
 countdown_dict = None
-log_channel_id = None
 
 from database import db
 
@@ -29,7 +28,6 @@ async def load_data():
 async def set_default_values():
     await db.set_variable("PREFIX", ".")
     await db.set_variable("COUNTDOWN_CHANNEL_ID", "0")
-    await db.set_variable("LOG_CHANNEL_ID", "0")
     await db.set_variable("COUNTDOWN_DATES", '{}')
 
     print("✅Successfully set the default values!")
