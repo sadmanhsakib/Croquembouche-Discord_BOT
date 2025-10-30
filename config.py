@@ -25,9 +25,6 @@ async def load_data():
 
     countdown_dict = json.loads(await db.get_variable("COUNTDOWN_DATES"))
 
-    log_channel_id = await db.get_variable("LOG_CHANNEL_ID")
-    log_channel_id = int(log_channel_id)
-
 
 async def set_default_values():
     await db.set_variable("PREFIX", ".")
@@ -36,5 +33,3 @@ async def set_default_values():
     await db.set_variable("COUNTDOWN_DATES", '{}')
 
     print("✅Successfully set the default values!")
-
-

@@ -15,7 +15,7 @@ intents.messages = True
 intents.presences = True
 intents.members = True
 
-TIME_FORMAT = "%Y-%m-%d->%H:%M:%S"
+TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 def get_prefix(bot, message):
     return config.prefix
@@ -87,6 +87,9 @@ async def on_presence_update(before, after):
         if old_status == "offline" and new_status != "offline":
             last_msg_date = ""
             today = now.split(' ')[0]
+            
+            # updating the database with the current opening time
+            await db.set_log(now, "0", "0")
 
             # getting the last time when a message was send in countdown channel
             async for message in countdown_channel.history(limit=1): 
@@ -102,10 +105,19 @@ async def on_presence_update(before, after):
                     countdown_counter += 1
                     time_left = time_difference(today, config.countdown_dict[key])
                     await countdown_channel.send(f"Countdown-{countdown_counter} -> {key}: {time_left}")
+                    
+        elif old_status != "offline" and new_status == "offline":
+            # getting the opening time from the database
+            opening_time = await db.get_log()
+            active_time = time_difference(opening_time, now)
+            
+            # updating the database
+            await db.set_log(opening_time, now, active_time)
+                           
 
 def time_difference(starting, now):
     # if starting contains time too
-    if len(starting.split(' ')) == 3:
+    if len(starting.split(' ')) == 2:
         # converting the time in datetime
         time1 = datetime.datetime.strptime(starting, TIME_FORMAT)
         time2 = datetime.datetime.strptime(now, TIME_FORMAT)

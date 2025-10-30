@@ -7,7 +7,6 @@ class Database:
 
     # connects with the database
     async def connect(self):
-        
         try:
             # since we have no Authentication, we can just use the URL
             self.pool = await asyncpg.create_pool(config.DATABASE_URL, ssl=True, min_size=1, max_size=15)
@@ -29,7 +28,7 @@ class Database:
         try:
             # gets the database connection from pool
             async with self.pool.acquire() as conn:
-                # creating a SQL table for dynamic variables
+                # creating a table for dynamic variables
                 await conn.execute(
                     """
                     -- creating a table called 'VAR_DATA' if not exists
@@ -39,6 +38,18 @@ class Database:
                         variable_value TEXT,
                         created_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Dhaka'),
                         updated_at TIMESTAMP DEFAULT (NOW() AT TIME ZONE 'Asia/Dhaka')
+                    );
+                """
+                )
+                
+                # creating a table for logging the data
+                await conn.execute(
+                    """
+                    -- creating a table called 'LOG_DATA' if not exists
+                    CREATE TABLE IF NOT EXISTS LOG_DATA (
+                        opening_time TEXT PRIMARY KEY,
+                        closing_time TEXT,
+                        was_active_for TEXT
                     );
                 """
                 )
@@ -85,10 +96,56 @@ class Database:
                     """,
                     name,
                 )
-
+                # returning the variable value
                 return result["variable_value"] if result else None
         except Exception as error:
             print(f"❌ Error getting variable {name}: {error}")
             return None
 
+    async def set_log(self, opening_time: str, closing_time: str, was_active_for: str):
+        try:
+            # gets the database connection from pool
+            async with self.pool.acquire() as conn:
+                # adding a new row to the log table
+                await conn.execute(
+                    """
+                    -- tries to insert a new variable in the table
+                    INSERT INTO LOG_DATA (opening_time, closing_time, was_active_for)
+                    -- $1, $2 and $3 are asyncpg placeholders
+                    VALUES ($1, $2, $3)
+                    -- conflict occurs when the opening_time already exists
+                        -- updating the closing_time and was_active_for
+                    ON CONFLICT (opening_time) DO UPDATE SET
+                        closing_time = $2,
+                        was_active_for = $3
+                    """,
+                    opening_time,
+                    closing_time,
+                    was_active_for
+                )
+                print(f"✅ Log set to {opening_time}, {closing_time}, {was_active_for}")
+        except Exception as error:
+            print(f"❌ Error setting log: {error}")
+
+    async def get_log(self):
+        try:
+            # gets the database connection from pool
+            async with self.pool.acquire() as conn:
+                # fetching the last row from the log table
+                result = await conn.fetchrow(
+                    """
+                    -- tries to get the variable value from the table
+                    SELECT *
+                    FROM LOG_DATA
+                    ORDER BY opening_time DESC
+                    LIMIT 1
+                    """,
+                )
+                # returning the opening_time
+                return result["opening_time"] if result else None
+        except Exception as error:
+            print(f"❌ Error getting last log: {error}")
+            return None
+        
+        
 db = Database()
