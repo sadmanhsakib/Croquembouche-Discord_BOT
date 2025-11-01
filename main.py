@@ -88,8 +88,9 @@ async def on_presence_update(before, after):
             last_msg_date = ""
             today = now.split(' ')[0]
             
-            # updating the database with the current opening time
-            await db.set_log(now, "0", "0")
+            if config.should_log:
+                # updating the database with the current opening time
+                await db.set_log(now, "0", "0")
 
             # getting the last time when a message was send in countdown channel
             async for message in countdown_channel.history(limit=1): 
@@ -106,7 +107,7 @@ async def on_presence_update(before, after):
                     time_left = time_difference(today, config.countdown_dict[key])
                     await countdown_channel.send(f"Countdown-{countdown_counter} -> {key}: {time_left}")
                     
-        elif old_status != "offline" and new_status == "offline":
+        elif old_status != "offline" and new_status == "offline" and config.should_log:
             # getting the opening time from the database
             opening_time = await db.get_log()
             active_time = time_difference(opening_time, now)
@@ -136,6 +137,7 @@ def time_difference(starting, now):
         active_time = str(duration.days) + " days"
 
     return active_time
+
 
 # starts the bot
 bot.run(config.BOT_TOKEN)

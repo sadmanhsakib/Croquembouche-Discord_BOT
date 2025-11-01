@@ -130,10 +130,14 @@ class BotCommands(commands.Cog):
                 case "PREFIX":
                     config.prefix = value
                     shouldUpdate = True
+                case "SHOULD_LOG":
+                    shouldUpdate = True
+                    value = True if value.lower() == "true" else False
+                    config.should_log = value
                 case "COUNTDOWN_CHANNEL_ID":
                     config.countdown_channel_id = int(value)
                     shouldUpdate = True
-
+                
             if shouldUpdate:
                 await db.set_variable(variable, value)
                 await ctx.send(f"Successful. {variable} set to {value}")

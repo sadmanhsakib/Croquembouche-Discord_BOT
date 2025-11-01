@@ -41,7 +41,7 @@ class Database:
                     );
                 """
                 )
-                
+
                 # creating a table for logging the data
                 await conn.execute(
                     """
@@ -65,7 +65,7 @@ class Database:
                 # updating the variable value in the table
                 await conn.execute(
                     """
-                    -- tries to insert a new variable in the table
+                    -- inserts a new variable in the table
                     INSERT INTO VAR_DATA (variable_name, variable_value)
                     -- $1 and $2 are asyncpg placeholders
                     VALUES ($1, $2)
@@ -73,7 +73,7 @@ class Database:
                     -- if the variable_name already exists, it updates the variable_value
                     ON CONFLICT (variable_name) DO UPDATE
                     SET variable_value = $2,
-                    updated_at = (NOW() AT TIME ZONE 'Asia/Dhaka')
+                    updated_at = TIMEZONE('Asia/Dhaka', NOW())
                     """,
                     name,
                     value,
@@ -89,7 +89,7 @@ class Database:
                 # getting the variable value from the table
                 result = await conn.fetchrow(
                     """
-                    -- tries to get the variable value from the table
+                    -- gets the variable value from the table
                     SELECT variable_value
                     FROM VAR_DATA
                     WHERE variable_name = $1
@@ -146,6 +146,6 @@ class Database:
         except Exception as error:
             print(f"❌ Error getting last log: {error}")
             return None
-        
-        
+
+
 db = Database()
