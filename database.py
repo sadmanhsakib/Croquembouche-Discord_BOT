@@ -76,7 +76,7 @@ class Database:
                     updated_at = TIMEZONE('Asia/Dhaka', NOW())
                     """,
                     name,
-                    value,
+                    str(value),
                 )
                 print(f"✅ Variable {name} set to {value}")
         except Exception as error:

@@ -143,7 +143,7 @@ class BotCommands(commands.Cog):
                 await ctx.send(f"Successful. {variable} set to {value}")
             else:
                 await ctx.send(
-                    f"Variable not found. Available variables are: PREFIX, COUNTDOWN_CHANNEL_ID"
+                    f"Variable not found. Available variables are: PREFIX, SHOULD_LOG, COUNTDOWN_CHANNEL_ID"
                 )
         except:
             await ctx.send(
