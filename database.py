@@ -31,8 +31,8 @@ class Database:
                 # creating a table for dynamic variables
                 await conn.execute(
                     """
-                    -- creating a table called 'VAR_DATA' if not exists
-                    CREATE TABLE IF NOT EXISTS VAR_DATA (
+                    -- creating a table called 'VAR' if not exists
+                    CREATE TABLE IF NOT EXISTS VAR (
                         -- PRIMARY KEY ensures that the variable_name is unique
                         variable_name VARCHAR(100) PRIMARY KEY,
                         variable_value TEXT,
@@ -45,8 +45,8 @@ class Database:
                 # creating a table for logging the data
                 await conn.execute(
                     """
-                    -- creating a table called 'LOG_DATA' if not exists
-                    CREATE TABLE IF NOT EXISTS LOG_DATA (
+                    -- creating a table called 'LOG' if not exists
+                    CREATE TABLE IF NOT EXISTS LOG (
                         opening_time TEXT PRIMARY KEY,
                         closing_time TEXT,
                         was_active_for TEXT
@@ -66,7 +66,7 @@ class Database:
                 await conn.execute(
                     """
                     -- inserts a new variable in the table
-                    INSERT INTO VAR_DATA (variable_name, variable_value)
+                    INSERT INTO VAR (variable_name, variable_value)
                     -- $1 and $2 are asyncpg placeholders
                     VALUES ($1, $2)
                     -- conflict occurs when the variable_name already exists
@@ -91,7 +91,7 @@ class Database:
                     """
                     -- gets the variable value from the table
                     SELECT variable_value
-                    FROM VAR_DATA
+                    FROM VAR
                     WHERE variable_name = $1
                     """,
                     name,
@@ -110,7 +110,7 @@ class Database:
                 await conn.execute(
                     """
                     -- tries to insert a new variable in the table
-                    INSERT INTO LOG_DATA (opening_time, closing_time, was_active_for)
+                    INSERT INTO LOG (opening_time, closing_time, was_active_for)
                     -- $1, $2 and $3 are asyncpg placeholders
                     VALUES ($1, $2, $3)
                     -- conflict occurs when the opening_time already exists
@@ -136,7 +136,7 @@ class Database:
                     """
                     -- tries to get the variable value from the table
                     SELECT *
-                    FROM LOG_DATA
+                    FROM LOG
                     ORDER BY opening_time DESC
                     LIMIT 1
                     """,
