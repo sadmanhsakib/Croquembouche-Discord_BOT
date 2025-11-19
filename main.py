@@ -4,10 +4,6 @@ import config
 from discord.ext import commands
 from database import db
 
-# for running the bot as a web
-from keep_alive import keep_alive
-keep_alive()
-
 # giving the permissions
 intents = discord.Intents.default()
 intents.message_content = True
