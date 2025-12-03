@@ -118,11 +118,7 @@ def time_difference(starting, now):
         # converting the time in datetime
         time1 = datetime.datetime.strptime(starting, TIME_FORMAT)
         time2 = datetime.datetime.strptime(now, TIME_FORMAT)
-        duration = time2 - time1
-
-        # making the time difference more readable
-        duration = str(duration).split(':')
-        active_time = f"{duration[0]} hours {duration[1]} minutes {duration[2]} seconds"
+        active_time = str(time2 - time1)
     else:
         # converting the time in datetime
         time1 = datetime.datetime.strptime(starting, "%Y-%m-%d")

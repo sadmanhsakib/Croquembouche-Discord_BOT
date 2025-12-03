@@ -53,7 +53,7 @@ class Database:
                     );
                 """
                 )
-                print("✅ Variables table ready!")
+                print("✅Variables table ready!")
         except Exception as error:
             print(f"❌ Error creating tables: {error}")
 
