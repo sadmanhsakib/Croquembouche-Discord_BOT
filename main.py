@@ -101,7 +101,7 @@ async def on_presence_update(before, after):
                 for key in config.countdown_dict.keys():
                     countdown_counter += 1
                     time_left = time_difference(today, config.countdown_dict[key])
-                    await countdown_channel.send(f"Countdown-{countdown_counter} -> {key}: {time_left}")
+                    await countdown_channel.send(f"{countdown_counter}. {key} : {config.countdown_dict[key]} -> {time_left}")
                     
         elif old_status != "offline" and new_status == "offline" and config.should_log:
             # getting the opening time from the database

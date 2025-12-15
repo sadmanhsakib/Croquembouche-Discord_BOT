@@ -79,6 +79,11 @@ class BotCommands(commands.Cog):
 
             # adding the countdown to the dictionary
             config.countdown_dict.update({name: date})
+            
+            # sorting the dictionary by value (date)
+            config.countdown_dict = dict(sorted(
+                config.countdown_dict.items(), key=lambda item: item[1]
+            ))
 
             # dumping the whole dictionary in string format
             updated = json.dumps(config.countdown_dict)
